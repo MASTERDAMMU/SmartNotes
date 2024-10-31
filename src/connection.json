@@ -1,0 +1,23 @@
+[
+    { "from": "animate", "to": "interpolate" },
+    { "from": "animate", "to": "ISchedulable" },
+    { "from": "animate", "to": "Parallel" },
+    { "from": "animate", "to": "Pause" },
+    { "from": "animate", "to": "Scheduler" },
+    { "from": "animate", "to": "Sequence" },
+    { "from": "animate", "to": "Transition" },
+    { "from": "animate", "to": "Transitioner" },
+    { "from": "animate", "to": "TransitionEvent" },
+    { "from": "animate", "to": "Tween" },
+    { "from": "animate", "to": "converters" },
+    { "from": "interpolate", "to": "MatrixInterpolator" },
+    { "from": "interpolate", "to": "NumberInterpolator" },
+    { "from": "interpolate", "to": "ObjectInterpolator" },
+    { "from": "interpolate", "to": "PointInterpolator" },
+    { "from": "interpolate", "to": "RectangleInterpolator" },
+    { "from": "converters", "to": "Converters" },
+    { "from": "converters", "to": "DelimitedTextConverter" },
+    { "from": "converters", "to": "GraphMLConverter" },
+    { "from": "converters", "to": "IDataConverter" },
+    { "from": "converters", "to": "JSONConverter" }
+  ]

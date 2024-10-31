@@ -1,0 +1,68 @@
+/* notes.css */
+.ProseMirror {
+    min-height: 100px;
+    padding: 10px;
+    background: #374151;
+    border-radius: 4px;
+    color: white;
+  }
+  
+  .ProseMirror:focus {
+    outline: none;
+  }
+  
+  .ProseMirror p {
+    margin: 1em 0;
+  }
+  
+  .ProseMirror > *:first-child {
+    margin-top: 0;
+  }
+  
+  .ProseMirror ul,
+  .ProseMirror ol {
+    padding-left: 2em;
+  }
+  
+  .ProseMirror blockquote {
+    border-left: 3px solid #666;
+    padding-left: 1em;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .ProseMirror pre {
+    background: #2d3748;
+    padding: 0.75em 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  
+  .ProseMirror code {
+    background: #2d3748;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  
+  .ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  .ProseMirror td,
+  .ProseMirror th {
+    min-width: 1em;
+    border: 2px solid #4a5568;
+    padding: 3px 5px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  .ProseMirror th {
+    font-weight: bold;
+    background-color: #2d3748;
+  }
