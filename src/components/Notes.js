@@ -17,7 +17,7 @@ const Notes = ({ setActiveNoteId, noteText, setNoteText, node, saveNote }) => {
   }, [setActiveNoteId]);
 
   return (
-    <foreignObject x={node.x + 50} y={node.y - 100} width="800" height="1000">
+    <foreignObject x={node.x + 50} y={node.y - 100} width="1000" height="1000">
       <div
         ref={notePopupRef}
         className="bg-gray-800 p-4 rounded border border-gray-600 shadow-xl h-full flex flex-col"
