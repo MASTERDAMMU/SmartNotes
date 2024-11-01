@@ -7,7 +7,17 @@ import defaultNodes from './data/defaultNodes.json';
 import defaultConnections from './data/defaultConnections.json';
 
 function App() {
+
+  const [activeTab, setActiveTab] = React.useState('Window1');
+
+  const tabs = [
+      { id: 'Window1', label: 'Window 1' },
+      { id: 'Window2', label: 'Window 2' },
+      { id: 'Window3', label: 'Window 3' },
+  ];
   // State Management
+
+  // node and their location
   const [nodes, setNodes] = React.useState(() => {
     try {
       return defaultNodes;
@@ -17,6 +27,7 @@ function App() {
     }
   });
 
+    // node and their connection
   const [edges, setEdges] = React.useState(() => {
     try {
       return defaultConnections;
@@ -34,6 +45,7 @@ function App() {
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
   const svgRef = React.useRef(null);
+  
 
   const [newNodeForm, setNewNodeForm] = React.useState({
     label: '',
@@ -98,11 +110,27 @@ function App() {
     return descendants;
   };
 
+  const subNodes = (nodeId) => {
+    let nodes = []
+    edges.forEach(edge =>{
+      if (edge.from === nodeId) {
+        const subNode = subNodes(edge.to)
+        nodes = [...nodes, nodeId, ...subNode]
+      }
+    })
+    return nodes
+  }
+
   const toggleNode = (nodeId) => {
     setExpandedNodes(prev => {
       const newSet = new Set(prev);
       if (newSet.has(nodeId)) {
         newSet.delete(nodeId);
+        const subNode = subNodes(nodeId)
+        subNode.forEach(nodeID => {
+          newSet.delete(nodeID);
+        });
+      
       } else {
         newSet.add(nodeId);
       }
@@ -181,16 +209,16 @@ function App() {
     // Drag and Drop Functionality
     const handleNodeDragStart = (e, nodeId) => {
       const node = nodes.find(n => n.id === nodeId);
-      const rect = e.target.getBoundingClientRect();
       setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: 0,
+        y: 0
       });
       setIsDragging(true);
       setSelectedNode(nodeId);
     };
   
     const handleNodeDrag = (e, nodeId) => {
+      console.log(e)
       if (!isDragging || selectedNode !== nodeId) return;
   
       const svgRect = svgRef.current.getBoundingClientRect();
@@ -202,6 +230,20 @@ function App() {
           ? { ...node, x: newX, y: newY }
           : node
       ));
+    };
+    
+    const handleNodeDoubleClick = (e, nodeId) => {
+      if (!isDragging || selectedNode !== nodeId) return;
+  
+      // const svgRect = svgRef.current.getBoundingClientRect();
+      // const newX = e.clientX - svgRect.left - dragOffset.x;
+      // const newY = e.clientY - svgRect.top - dragOffset.y;
+  
+      // setNodes(prev => prev.map(node => 
+      //   node.id === nodeId
+      //     ? { ...node, x: newX, y: newY }
+      //     : node
+      // ));
     };
   
     const handleNodeDragEnd = () => {
@@ -353,7 +395,23 @@ function App() {
         </div>
   
         {/* Graph View */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex overflow-hidden">
+
+        <div className="container mx-auto">
+            <div className="tabs flex">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        className={`tab-button py-2 px-4 focus:outline-none ${activeTab === tab.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
+                        onClick={() => setActiveTab(tab.id)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+
           <svg 
             ref={svgRef}
             width="100%" 
@@ -384,15 +442,17 @@ function App() {
                 key={node.id}
                 onMouseEnter={() => setHoveredNode(node.id)}
                 onMouseLeave={() => setHoveredNode(null)}
-                onMouseDown={(e) => handleNodeDragStart(e, node.id)}
-                onMouseMove={(e) => handleNodeDrag(e, node.id)}
+                onClick={() => toggleNode(node.id)} // Toggle visibility on click
                 className="cursor-pointer"
               >
                 {/* Node Circle */}
                 <circle
+                  onMouseDown={(e) => handleNodeDragStart(e, node.id)}
+                  onMouseMove={(e) => handleNodeDrag(e, node.id)}
                   cx={node.x}
                   cy={node.y}
-                  r={12}
+                  r={15}
+                  onDoubleClick={(e) => handleNodeDoubleClick(e,node.id)} 
                   fill={getNodeColor(node.type)}
                   className={`transition-all duration-200 ${
                     hoveredNode === node.id || selectedNode === node.id ? 'opacity-80' : 'opacity-100'
@@ -423,7 +483,7 @@ function App() {
   
                 {/* Note Icon */}
                 <g
-                  transform={`translate(${node.x - 30}, ${node.y - 10})`}
+                  transform={`translate(${node.x - 40}, ${node.y - 10})`}
                   onClick={(e) => toggleNotePopup(node.id, e)}
                   className="cursor-pointer hover:opacity-80"
                 >
@@ -440,6 +500,8 @@ function App() {
                     textAnchor="middle"
                     fill={node.notes ? "#ffd700" : "#666"}
                     className="text-xs"
+                    style={{ fontSize: '25px' }} // Adjust font size if needed
+
                   >
                     📝
                   </text>

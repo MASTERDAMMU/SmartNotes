@@ -22,9 +22,12 @@ const Notes = ({ setActiveNoteId, noteText, setNoteText, node, saveNote }) => {
         ref={notePopupRef}
         className="bg-gray-800 p-4 rounded border border-gray-600 shadow-xl h-full flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        style={{ zIndex: '25px' }} // Adjust font size if needed
+
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white font-bold text-lg">Notes for {node.label}</h3>
+          <h3 className="text-white font-bold text-lg"
+          >Notes for {node.label}</h3>
           <button
             onClick={(e) => {
               e.stopPropagation();
