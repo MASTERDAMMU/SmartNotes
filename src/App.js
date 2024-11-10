@@ -5,22 +5,81 @@ import Notes from './components/Notes';
 import { saveToFile, loadFromFile, exportAsPNG } from './utils/fileUtils';
 import defaultNodes from './data/defaultNodes.json';
 import defaultConnections from './data/defaultConnections.json';
+const TabMap = {}
 
 function App() {
 
-  const [activeTab, setActiveTab] = React.useState('Window1');
 
-  const tabs = [
-      { id: 'Window1', label: 'Window 1' },
-      { id: 'Window2', label: 'Window 2' },
-      { id: 'Window3', label: 'Window 3' },
-  ];
+
+  const [tabs, setTabs] = React.useState([{ id: 'Mind Map', label: 'Mind Map' }]);
+  const [activeTab, setActiveTab] = React.useState('Mind Map');
+  const [tabCount, setTabCount] = React.useState(1);
+  const defaultTab ={
+    nodes : defaultNodes,
+    edges : defaultConnections,
+    expandedNodes: new Set(['root']),
+    hoveredNode: null,
+    selectedNode:null,
+    activeNoteId:null,
+    noteText:'',
+    isDragging:false,
+    dragOffset:{ x: 0, y: 0 },
+    svgRef: null
+  }
+
+  TabMap['Mind Map'] = {...defaultTab}
+  React.useEffect(()=>{
+    setNodes(TabMap[activeTab].nodes)
+    setEdges(TabMap[activeTab].edges)
+    setHoveredNode(TabMap[activeTab].hoveredNode)
+    setSelectedNode(TabMap[activeTab].selectedNode)
+    setActiveNoteId(TabMap[activeTab].activeNoteId)
+    setNoteText(TabMap[activeTab].noteText)
+    setIsDragging(TabMap[activeTab].isDragging)
+    setDragOffset(TabMap[activeTab].dragOffset)
+    svgRef = TabMap[activeTab].svgRef
+
+  },[activeTab])
+  const addTab = () => {
+      const newTabCount = tabCount + 1;
+      // prompt for name
+
+      const name = prompt("Name of Map")
+      const newTab = { id: name, label: name };
+      setTabs([...tabs, newTab]);
+      setTabCount(newTabCount);
+      setActiveTab(newTab.id); // Open the new tab
+      TabMap[name] = {...defaultTab}
+
+  };
+
+  function customConfirm(message) {
+    return new Promise((resolve, reject) => {
+        const confirmation = window.confirm(message);
+        resolve(confirmation); // returns true or false
+    });
+}
+
+  const closeTab = (tabId) => {
+    customConfirm("Are you sure you want to delete this tab?")
+    .then((result) => {
+        if (result) {
+            // proceed with deletion
+            const updatedTabs = tabs.filter(tab => tab.id !== tabId);
+        setTabs(updatedTabs);
+        if (activeTab === tabId && updatedTabs.length > 0) {
+          setActiveTab(updatedTabs[0].id); // Open the first tab if the active one is closed
+        }
+        TabMap[tabId] = defaultTab
+        } 
+    }); 
+  };
   // State Management
 
   // node and their location
   const [nodes, setNodes] = React.useState(() => {
     try {
-      return defaultNodes;
+      return TabMap[activeTab].nodes;
     } catch (error) {
       console.error('Error loading default nodes:', error);
       return [];
@@ -30,7 +89,7 @@ function App() {
     // node and their connection
   const [edges, setEdges] = React.useState(() => {
     try {
-      return defaultConnections;
+      return TabMap[activeTab].edges;
     } catch (error) {
       console.error('Error loading default connections:', error);
       return [];
@@ -44,8 +103,8 @@ function App() {
   const [noteText, setNoteText] = React.useState('');
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
-  const svgRef = React.useRef(null);
-  
+  let svgRef = React.useRef(null);
+
 
   const [newNodeForm, setNewNodeForm] = React.useState({
     label: '',
@@ -56,9 +115,10 @@ function App() {
   // File Management Functions
   const handleSave = async () => {
     const data = {
-      nodes,
-      edges,
-      expandedNodes: Array.from(expandedNodes)
+      nodes: TabMap[activeTab].nodes,
+      edges: TabMap[activeTab].edges,
+      expandedNodes: Array.from(TabMap[activeTab].expandedNodes),
+      tab: activeTab
     };
     const success = await saveToFile(data, 'mindmap-data.json');
     if (success) {
@@ -71,8 +131,26 @@ function App() {
   const handleLoad = async () => {
     const data = await loadFromFile();
     if (data) {
-      setNodes(data.nodes);
-      setEdges(data.edges);
+      TabMap[activeTab].nodes = data.nodes
+      TabMap[activeTab].edges = data.edges
+      TabMap[activeTab].expandedNodes = data.expandedNodes
+      TabMap[activeTab].hoveredNode =null
+      TabMap[activeTab].selectedNode = null
+      TabMap[activeTab].activeNoteId = activeNoteId
+      TabMap[activeTab].noteText = ""
+      TabMap[activeTab].isDragging = false
+      TabMap[activeTab].dragOffset = { x: 0, y: 0 }
+      TabMap[activeTab].svgRef = null
+
+      setNodes(TabMap[activeTab].nodes)
+      setEdges(TabMap[activeTab].edges)
+      setHoveredNode(TabMap[activeTab].hoveredNode)
+      setSelectedNode(TabMap[activeTab].selectedNode)
+      setActiveNoteId(TabMap[activeTab].activeNoteId)
+      setNoteText(TabMap[activeTab].noteText)
+      setIsDragging(TabMap[activeTab].isDragging)
+      setDragOffset(TabMap[activeTab].dragOffset)
+      svgRef = TabMap[activeTab].svgRef
       setExpandedNodes(new Set(data.expandedNodes));
       alert('Mind map loaded successfully!');
     }
@@ -196,6 +274,20 @@ function App() {
     }
   };
 
+  const savePreviousTab = (tabId) => {
+
+    TabMap[activeTab].nodes =nodes
+    TabMap[activeTab].edges = edges
+    TabMap[activeTab].hoveredNode =hoveredNode
+    TabMap[activeTab].selectedNode = selectedNode
+    TabMap[activeTab].activeNoteId = activeNoteId
+    TabMap[activeTab].noteText = activeNoteId
+    TabMap[activeTab].isDragging = isDragging
+    TabMap[activeTab].dragOffset = dragOffset
+    TabMap[activeTab].svgRef = svgRef
+    setActiveTab(tabId)
+  }
+
   const saveNote = (e) => {
     e.stopPropagation();
     setNodes(prev => prev.map(node => 
@@ -249,12 +341,12 @@ function App() {
     const handleNodeDragEnd = () => {
       setIsDragging(false);
     };
-  
+
     // Memoized Calculations
     const visibleNodes = React.useMemo(() => {
       const visibleNodeIds = new Set();
       
-      nodes.filter(node => node.type === 'root').forEach(node => {
+      TabMap[activeTab].nodes.filter(node => node.type === 'root').forEach(node => {
         visibleNodeIds.add(node.id);
       });
   
@@ -395,18 +487,27 @@ function App() {
         </div>
   
         {/* Graph View */}
-        <div className="flex overflow-hidden">
+        <div className="flex-1 flex-col h-screen "
+        >
 
-        <div className="container mx-auto">
-            <div className="tabs flex">
+        <div className="">
+            <div className="tabs flex border-b border-gray-300 mb-2">
+                <button className="tab-button text-gray-500 hover:text-blue-500 py-2 px-4 focus:outline-none" onClick={addTab}>+ Add Tab</button>
                 {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`tab-button py-2 px-4 focus:outline-none ${activeTab === tab.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
-                        onClick={() => setActiveTab(tab.id)}
-                    >
-                        {tab.label}
-                    </button>
+                    <div key={tab.id} className="flex items-center">
+                        <button
+                            className={`tab-button py-2 px-4 focus:outline-none ${activeTab === tab.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
+                            onClick={() => savePreviousTab(tab.id)}
+                        >
+                            {tab.label}
+                        </button>
+                        <span
+                            className="ml-2 cursor-pointer text-red-500"
+                            onClick={() => closeTab(tab.id)}
+                        >
+                            ✖
+                        </span>
+                    </div>
                 ))}
             </div>
         </div>
