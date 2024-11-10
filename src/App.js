@@ -26,8 +26,9 @@ function App() {
     dragOffset:{ x: 0, y: 0 },
     svgRef: null
   }
-
-  TabMap['Mind Map'] = {...defaultTab}
+  if (TabMap['Mind Map'] == undefined) {
+    TabMap['Mind Map'] = {...defaultTab}
+  }
   React.useEffect(()=>{
     setNodes(TabMap[activeTab].nodes)
     setEdges(TabMap[activeTab].edges)
@@ -136,7 +137,7 @@ function App() {
       TabMap[activeTab].expandedNodes = data.expandedNodes
       TabMap[activeTab].hoveredNode =null
       TabMap[activeTab].selectedNode = null
-      TabMap[activeTab].activeNoteId = activeNoteId
+      TabMap[activeTab].activeNoteId = null
       TabMap[activeTab].noteText = ""
       TabMap[activeTab].isDragging = false
       TabMap[activeTab].dragOffset = { x: 0, y: 0 }
@@ -177,6 +178,7 @@ function App() {
   const getAllDescendants = (nodeId, visited = new Set()) => {
     if (visited.has(nodeId)) return [];
     visited.add(nodeId);
+    TabMap[activeTab].visited = visited
     
     const children = getDirectChildren(nodeId);
     let descendants = [...children];
@@ -238,12 +240,16 @@ function App() {
       y: newY,
       notes: ''
     };
-
-    setNodes(prev => [...prev, newNode]);
+    
+    TabMap[activeTab].nodes = [...nodes, newNode]
+    setNodes(TabMap[activeTab].nodes);
 
     if (newNodeForm.parent) {
-      setEdges(prev => [...prev, { from: newNodeForm.parent, to: newNode.id }]);
-      setExpandedNodes(prev => new Set([...prev, newNodeForm.parent]));
+      TabMap[activeTab].edges = [...edges, { from: newNodeForm.parent, to: newNode.id }]
+      setEdges(TabMap[activeTab].edges);
+
+      TabMap[activeTab].expandedNodes =  new Set([...expandedNodes, newNodeForm.parent])
+      setExpandedNodes(TabMap[activeTab].expandedNodes);
     }
 
     setNewNodeForm({ label: '', type: 'default', parent: '' });
@@ -251,24 +257,31 @@ function App() {
 
   const removeNode = (nodeId) => {
     const descendants = getAllDescendants(nodeId);
-    setNodes(prev => prev.filter(n => n.id !== nodeId && !descendants.includes(n.id)));
-    setEdges(prev => prev.filter(e => 
+    TabMap[activeTab].nodes = nodes.filter(n => n.id !== nodeId && !descendants.includes(n.id))
+    setNodes(TabMap[activeTab].nodes);
+
+    TabMap[activeTab].edges = edges.filter(e => 
       e.from !== nodeId && 
       e.to !== nodeId && 
       !descendants.includes(e.from) && 
       !descendants.includes(e.to)
-    ));
-    setSelectedNode(null);
+    )
+    setEdges(TabMap[activeTab].edges);
+
+    TabMap[activeTab].selectedNode =null
+    setSelectedNode(TabMap[activeTab].selectedNode);
   };
 
   // Note Management
   const toggleNotePopup = (nodeId, e) => {
     e.stopPropagation();
     if (activeNoteId === nodeId) {
+      TabMap[activeTab].activeNoteId =null
       setActiveNoteId(null);
       setNoteText('');
     } else {
       const node = nodes.find(n => n.id === nodeId);
+      TabMap[activeTab].activeNoteId =nodeId
       setActiveNoteId(nodeId);
       setNoteText(node.notes || '');
     }
@@ -290,22 +303,29 @@ function App() {
 
   const saveNote = (e) => {
     e.stopPropagation();
-    setNodes(prev => prev.map(node => 
+    TabMap[activeTab].nodes = nodes.map(node => 
       node.id === activeNoteId 
-        ? { ...node, notes: noteText }
-        : node
-    ));
+      ? { ...node, notes: noteText }
+      : node
+    )
+    setNodes(nodes);
+    TabMap[activeTab].activeNoteId = null
     setActiveNoteId(null);
+
   };
 
     // Drag and Drop Functionality
     const handleNodeDragStart = (e, nodeId) => {
       const node = nodes.find(n => n.id === nodeId);
+      TabMap[activeTab].dragOffset = dragOffset
       setDragOffset({
         x: 0,
         y: 0
       });
+
+      TabMap[activeTab].isDragging =isDragging
       setIsDragging(true);
+      TabMap[activeTab].selectedNode= selectedNode
       setSelectedNode(nodeId);
     };
   
@@ -317,11 +337,12 @@ function App() {
       const newX = e.clientX - svgRect.left - dragOffset.x;
       const newY = e.clientY - svgRect.top - dragOffset.y;
   
-      setNodes(prev => prev.map(node => 
+      TabMap[activeTab].nodes = nodes.map(node => 
         node.id === nodeId
-          ? { ...node, x: newX, y: newY }
-          : node
-      ));
+        ? { ...node, x: newX, y: newY }
+        : node
+      )
+      setNodes(TabMap[activeTab].nodes);
     };
     
     const handleNodeDoubleClick = (e, nodeId) => {
@@ -339,6 +360,7 @@ function App() {
     };
   
     const handleNodeDragEnd = () => {
+      TabMap[activeTab].isDragging = false
       setIsDragging(false);
     };
 
