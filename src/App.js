@@ -5,6 +5,7 @@ import Notes from './components/Notes';
 import { saveToFile, loadFromFile, exportAsPNG } from './utils/fileUtils';
 import defaultNodes from './data/defaultNodes.json';
 import defaultConnections from './data/defaultConnections.json';
+import NoteSummary from './components/NoteSummary';
 const TabMap = {}
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
     hoveredNode: null,
     selectedNode:null,
     activeNoteId:null,
+    activeNoteSummaryId: null,
     noteText:'',
     isDragging:false,
     dragOffset:{ x: 0, y: 0 },
@@ -35,6 +37,7 @@ function App() {
     setHoveredNode(TabMap[activeTab].hoveredNode)
     setSelectedNode(TabMap[activeTab].selectedNode)
     setActiveNoteId(TabMap[activeTab].activeNoteId)
+    setActiveNoteSummaryId(TabMap[activeTab].activeNoteSummaryId)
     setNoteText(TabMap[activeTab].noteText)
     setIsDragging(TabMap[activeTab].isDragging)
     setDragOffset(TabMap[activeTab].dragOffset)
@@ -101,6 +104,7 @@ function App() {
   const [hoveredNode, setHoveredNode] = React.useState(null);
   const [selectedNode, setSelectedNode] = React.useState(null);
   const [activeNoteId, setActiveNoteId] = React.useState(null);
+  const [activeNoteSummaryId, setActiveNoteSummaryId] = React.useState(null);
   const [noteText, setNoteText] = React.useState('');
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
@@ -129,6 +133,16 @@ function App() {
     }
   };
 
+  const handleSaveAll = async () => {
+    
+    const success = await saveToFile(TabMap, 'mindmap-data.json');
+      if (success) {
+        alert('Mind map saved successfully!');
+      } else {
+        alert('Failed to save mind map');
+      }
+  };
+
   const handleLoad = async () => {
     const data = await loadFromFile();
     if (data) {
@@ -138,6 +152,7 @@ function App() {
       TabMap[activeTab].hoveredNode =null
       TabMap[activeTab].selectedNode = null
       TabMap[activeTab].activeNoteId = null
+      TabMap[activeTab].activeNoteSummaryId = null
       TabMap[activeTab].noteText = ""
       TabMap[activeTab].isDragging = false
       TabMap[activeTab].dragOffset = { x: 0, y: 0 }
@@ -148,6 +163,7 @@ function App() {
       setHoveredNode(TabMap[activeTab].hoveredNode)
       setSelectedNode(TabMap[activeTab].selectedNode)
       setActiveNoteId(TabMap[activeTab].activeNoteId)
+      setActiveNoteSummaryId(TabMap[activeTab].activeNoteSummaryId)
       setNoteText(TabMap[activeTab].noteText)
       setIsDragging(TabMap[activeTab].isDragging)
       setDragOffset(TabMap[activeTab].dragOffset)
@@ -156,6 +172,35 @@ function App() {
       alert('Mind map loaded successfully!');
     }
   };
+
+  const handleLoadAll = async () => {
+    const d = await loadFromFile();
+
+    if (d) {
+      for (let k in d) {
+        let data = d[k]
+        if (TabMap[k] ==undefined){
+          TabMap[k] = {}
+        }
+        TabMap[k].nodes = data.nodes
+        TabMap[k].edges = data.edges
+        TabMap[k].expandedNodes = data.expandedNodes
+        TabMap[k].hoveredNode = null
+        TabMap[k].selectedNode = null
+        TabMap[k].activeNoteId = null
+        TabMap[k].activeNoteSummaryId = null
+        TabMap[k].noteText = ""
+        TabMap[k].isDragging = false
+        TabMap[k].dragOffset = { x: 0, y: 0 }
+        TabMap[k].svgRef = null
+        const newTab = { id: k, label: k }
+        setTabs([...tabs, newTab])
+        setTabCount(tabCount + 1)
+      }
+      alert('Mind map loaded successfully!');
+    }
+  };
+
 
   const handleExportPNG = async () => {
     if (svgRef.current) {
@@ -284,6 +329,19 @@ function App() {
       TabMap[activeTab].activeNoteId =nodeId
       setActiveNoteId(nodeId);
       setNoteText(node.notes || '');
+    }
+  };
+
+  // Note Management
+  const toggleNoteSummaryPopup = (nodeId, e) => {
+    e.stopPropagation();
+    if (activeNoteSummaryId === nodeId) {
+      TabMap[activeTab].activeNoteSummaryId =null
+      setActiveNoteSummaryId(null);
+    } else {
+      const node = nodes.find(n => n.id === nodeId);
+      TabMap[activeTab].activeNoteSummaryId =nodeId
+      setActiveNoteSummaryId(nodeId);
     }
   };
 
@@ -506,6 +564,27 @@ function App() {
               </button>
             </div>
           )}
+
+
+          <div className="mt-4">
+              <p className="mb-2">{nodes.find(n => n.id === selectedNode)?.label}</p>
+              <button
+                className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                onClick={() => handleSaveAll(selectedNode)}
+              >
+                Save All Tabs
+              </button>
+            </div>
+
+        <div className="mt-4">
+              <p className="mb-2">{nodes.find(n => n.id === selectedNode)?.label}</p>
+              <button
+                className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                onClick={() => handleLoadAll(selectedNode)}
+              >
+                Loads Tabs
+              </button>
+            </div>
         </div>
   
         {/* Graph View */}
@@ -624,11 +703,36 @@ function App() {
                     fill={node.notes ? "#ffd700" : "#666"}
                     className="text-xs"
                     style={{ fontSize: '25px' }} // Adjust font size if needed
-
                   >
                     📝
                   </text>
                 </g>
+
+                <g
+                  transform={`translate(${node.x - 80}, ${node.y - 10})`}
+                  onClick={(e) => toggleNoteSummaryPopup(node.id, e)}
+                  className="cursor-pointer hover:opacity-80"
+                >
+                  <rect
+                    width="20"
+                    height="20"
+                    fill="transparent"
+                    stroke={node.notes ? "#ffd700" : "#666"}
+                    rx="4"
+                  />
+                  <text
+                    x="-15"
+                    y="15"
+                    textAnchor="middle"
+                    fill={node.notes ? "#ffd700" : "#666"}
+                    className="text-xs"
+                    style={{ fontSize: '25px' }} // Adjust font size if needed
+
+                  >
+                    📄
+                  </text>
+                </g>
+  
   
                 {/* Note Popup */}
                 {activeNoteId === node.id && (
@@ -640,8 +744,23 @@ function App() {
                     saveNote={saveNote}
                   />
                 )}
+  
+                {/* Note Summary Popup */}
+                { true && (
+                  <NoteSummary
+                    activeNoteSummaryId={activeNoteSummaryId}
+                    node={node}
+                    nodes={nodes}
+                    edges={edges}
+                  />
+                )}
+
+                
               </g>
-            ))}
+              
+            ))
+            }
+
           </svg>
         </div>
       </div>
