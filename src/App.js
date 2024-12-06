@@ -707,33 +707,6 @@ function App() {
                     📝
                   </text>
                 </g>
-
-                <g
-                  transform={`translate(${node.x - 80}, ${node.y - 10})`}
-                  onClick={(e) => toggleNoteSummaryPopup(node.id, e)}
-                  className="cursor-pointer hover:opacity-80"
-                >
-                  <rect
-                    width="20"
-                    height="20"
-                    fill="transparent"
-                    stroke={node.notes ? "#ffd700" : "#666"}
-                    rx="4"
-                  />
-                  <text
-                    x="-15"
-                    y="15"
-                    textAnchor="middle"
-                    fill={node.notes ? "#ffd700" : "#666"}
-                    className="text-xs"
-                    style={{ fontSize: '25px' }} // Adjust font size if needed
-
-                  >
-                    📄
-                  </text>
-                </g>
-  
-  
                 {/* Note Popup */}
                 {activeNoteId === node.id && (
                   <Notes
