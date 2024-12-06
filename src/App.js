@@ -567,7 +567,6 @@ function App() {
 
 
           <div className="mt-4">
-              <p className="mb-2">{nodes.find(n => n.id === selectedNode)?.label}</p>
               <button
                 className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
                 onClick={() => handleSaveAll(selectedNode)}
@@ -577,7 +576,6 @@ function App() {
             </div>
 
         <div className="mt-4">
-              <p className="mb-2">{nodes.find(n => n.id === selectedNode)?.label}</p>
               <button
                 className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
                 onClick={() => handleLoadAll(selectedNode)}
