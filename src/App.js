@@ -695,6 +695,7 @@ function App() {
                   <text
                     x="10"
                     y="15"
+                    label="Notes"
                     textAnchor="middle"
                     fill={node.notes ? "#ffd700" : "#666"}
                     className="text-xs"

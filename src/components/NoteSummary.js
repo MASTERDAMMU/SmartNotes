@@ -7,12 +7,12 @@ const NoteSummary = ({ setActiveNoteId, activeNoteSummaryId, node, nodes, edges 
   const transverse = (curNode, nodes, edges, prefix) => {  
     let list = [];  
     let nod = nodes.find((n) => n.id === curNode);  
-    list.push(prefix + "| " + nod.label + " |") ;  
+    list.push(prefix + " " + nod.label);  
     for (let i = 0; i < edges.length; i++) {  
       if (edges[i].from === curNode) {  
         let pre = prefix;
         for (let j = 0; j < nod.label.length; j++) {
-          pre += "-";
+          pre += '\u00A0-';
         }
         list.push(...transverse(edges[i].to, nodes, edges, pre));  
       }  
