@@ -332,10 +332,9 @@ function App() {
     }
   };
 
-  // Note Management
   const toggleNoteSummaryPopup = (nodeId, e) => {
     e.stopPropagation();
-    if (activeNoteSummaryId === nodeId) {
+    if (activeNoteId === nodeId) {
       TabMap[activeTab].activeNoteSummaryId =null
       setActiveNoteSummaryId(null);
     } else {
@@ -680,6 +679,31 @@ function App() {
                 >
                   {node.label}
                 </text>
+
+                <g
+                  transform={`translate(${node.x-70}, ${node.y -10})`}
+                  onClick={(e) => toggleNoteSummaryPopup(node.id, e)}
+                  className="cursor-pointer hover:opacity-80"
+                >
+                  <rect
+                    width="20"
+                    height="20"
+                    fill="transparent"
+                    stroke={node.notes ? "#ffd700" : "#666"}
+                    rx="4"
+                  />
+                  <text
+                    x="10"
+                    y="15"
+                    textAnchor="middle"
+                    fill={node.notes ? "#ffd700" : "#666"}
+                    className="text-xs"
+                    style={{ fontSize: '25px' }} // Adjust font size if needed
+                  >
+                  📓
+                  </text> 
+                </g>
+
   
                 {/* Note Icon */}
                 <g
@@ -717,16 +741,17 @@ function App() {
                 )}
   
                 {/* Note Summary Popup */}
-                { true && (
+                { activeNoteSummaryId === node.id && (
                   <NoteSummary
-                    activeNoteSummaryId={activeNoteSummaryId}
-                    node={node}
-                    nodes={nodes}
-                    edges={edges}
+                  setActiveNoteId={setActiveNoteSummaryId}
+                  node={node}
+                  nodes={nodes}
+                  edges={edges}
+
                   />
                 )}
 
-                
+          
               </g>
               
             ))
