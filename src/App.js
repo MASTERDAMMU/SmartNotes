@@ -57,6 +57,44 @@ function App() {
 
   };
 
+  const CopyToNewTab = (selectedNode) => {
+    if (selectedNode == 'root'){ 
+      alert('Cannot copy root node');
+      return;
+    }
+    const newTabCount = tabCount + 1;
+    const name = prompt("Name of Map")
+    const newTab = { id: name, label: name };
+    const nod = TabMap[activeTab].nodes.find((n) => n.id === selectedNode);    
+    let nods = []
+    let edges = []
+
+    nods = [ nod.id, ...getAllDescendants(nod.id)];
+    edges = new Set(TabMap[activeTab].edges.filter((c) => nods.includes(c.from)));
+    // convert edges set to arry
+    let copiedEdges = Array.from(edges);
+
+    nods = nods.map((n) => TabMap[activeTab].nodes.find((an) => an.id === n));
+
+    TabMap[newTab.id] =  {
+      nodes : [...nods, ...defaultNodes],
+      edges : [...copiedEdges, { from: 'root', to: nod.id }],
+      expandedNodes: new Set(['root']),
+      hoveredNode: null,
+      selectedNode:null,
+      activeNoteId:null,
+      activeNoteSummaryId: null,
+      noteText:'',
+      isDragging:false,
+      dragOffset:{ x: 0, y: 0 },
+      svgRef: null
+    }
+    setTabs([...tabs, newTab]);
+    setTabCount(newTabCount);
+    setActiveTab(newTab.id); // Open the new tab
+
+  };
+
   function customConfirm(message) {
     return new Promise((resolve, reject) => {
         const confirmation = window.confirm(message);
@@ -345,7 +383,6 @@ function App() {
   };
 
   const savePreviousTab = (tabId) => {
-
     TabMap[activeTab].nodes =nodes
     TabMap[activeTab].edges = edges
     TabMap[activeTab].hoveredNode =hoveredNode
@@ -554,14 +591,26 @@ function App() {
           {selectedNode && (
             <div className="mt-4">
               <h3 className="text-lg mb-2">Selected Node</h3>
-              <p className="mb-2">{nodes.find(n => n.id === selectedNode)?.label}</p>
+
+              <div className="bg-gray-700 p-4 rounded">
+              <p className="mb-2 align-center font-bold text-lg p-2 rounded text-white ">{nodes.find(n => n.id === selectedNode)?.label}</p>
               <button
                 className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
                 onClick={() => removeNode(selectedNode)}
               >
                 Remove Node
               </button>
+              <div className="mt-4"> </div>
+              <button
+                className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                onClick={() => CopyToNewTab(selectedNode)}
+              >
+                Copy to New Tab
+              </button>
+              </div>
             </div>
+            
+            
           )}
 
 
