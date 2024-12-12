@@ -388,7 +388,7 @@ function App() {
     TabMap[activeTab].hoveredNode =hoveredNode
     TabMap[activeTab].selectedNode = selectedNode
     TabMap[activeTab].activeNoteId = activeNoteId
-    TabMap[activeTab].noteText = activeNoteId
+    TabMap[activeTab].noteText = noteText
     TabMap[activeTab].isDragging = isDragging
     TabMap[activeTab].dragOffset = dragOffset
     TabMap[activeTab].svgRef = svgRef
@@ -402,7 +402,7 @@ function App() {
       ? { ...node, notes: noteText }
       : node
     )
-    setNodes(nodes);
+    setNodes(TabMap[activeTab].nodes);
     TabMap[activeTab].activeNoteId = null
     setActiveNoteId(null);
 

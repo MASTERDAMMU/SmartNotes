@@ -3,6 +3,9 @@ import * as React from 'react';  // Change the import to this
 import EnhancedEditor from './EnhancedEditor';
 
 const Notes = ({ setActiveNoteId, noteText, setNoteText, node, saveNote }) => {
+  console.log(node);
+  console.log(noteText);
+  
   const notePopupRef = React.useRef(null);  // Use React.useRef instead of useRef
 
   React.useEffect(() => {    // Use React.useEffect instead of useEffect
