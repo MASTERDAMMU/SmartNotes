@@ -363,7 +363,7 @@ function App() {
       setActiveNoteId(null);
       setNoteText('');
     } else {
-      const node = nodes.find(n => n.id === nodeId);
+      const node = TabMap[activeTab].nodes.find(n => n.id === nodeId);
       TabMap[activeTab].activeNoteId =nodeId
       setActiveNoteId(nodeId);
       setNoteText(node.notes || '');
