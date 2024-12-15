@@ -7,6 +7,19 @@ import defaultNodes from './data/defaultNodes.json';
 import defaultConnections from './data/defaultConnections.json';
 import NoteSummary from './components/NoteSummary';
 var TabMap = {}
+const defaultTab ={
+  nodes : defaultNodes,
+  edges : defaultConnections,
+  expandedNodes: new Set(['root']),
+  hoveredNode: null,
+  selectedNode:null,
+  activeNoteId:null,
+  activeNoteSummaryId: null,
+  noteText:'',
+  isDragging:false,
+  dragOffset:{ x: 0, y: 0 },
+  svgRef: null
+}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -31,6 +44,12 @@ function openDatabase() {
 
 // Function to save the tabMap object to IndexedDB
 function saveTabMapToIndexedDB(db, tabMap) {
+  // check if tabMap is equal to has only one map Mind Map and Mind Map is equal to defaultTab
+  if (Object.keys(tabMap).length === 1 && Object.keys(tabMap)[0] === 'Mind Map' && JSON.stringify(Object.values(tabMap)[0]) === JSON.stringify(defaultTab)) {
+    console.log('default Map not allowed to save.');
+    return;
+  }
+
   const transaction = db.transaction('tabMapStore', 'readwrite');
   const store = transaction.objectStore('tabMapStore');
 
@@ -99,25 +118,12 @@ function App() {
     } catch (error) {
       console.error('Error saving tabMap to IndexedDB:', error);
     }
-  }, 60000);
+  }, 10000);
 
 
   const [tabs, setTabs] = React.useState([{ id: 'Mind Map', label: 'Mind Map' }]);
   const [activeTab, setActiveTab] = React.useState('Mind Map');
   const [tabCount, setTabCount] = React.useState(1);
-  const defaultTab ={
-    nodes : defaultNodes,
-    edges : defaultConnections,
-    expandedNodes: new Set(['root']),
-    hoveredNode: null,
-    selectedNode:null,
-    activeNoteId:null,
-    activeNoteSummaryId: null,
-    noteText:'',
-    isDragging:false,
-    dragOffset:{ x: 0, y: 0 },
-    svgRef: null
-  }
   if (TabMap['Mind Map'] == undefined) {
     // check if tabmap is there in indexdb if not create else load 
       TabMap['Mind Map'] = {...defaultTab}
