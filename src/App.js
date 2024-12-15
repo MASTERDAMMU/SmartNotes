@@ -6,10 +6,100 @@ import { saveToFile, loadFromFile, exportAsPNG } from './utils/fileUtils';
 import defaultNodes from './data/defaultNodes.json';
 import defaultConnections from './data/defaultConnections.json';
 import NoteSummary from './components/NoteSummary';
-const TabMap = {}
+var TabMap = {}
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('TabMapDatabase', 1);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('tabMapStore')) {
+        db.createObjectStore('tabMapStore', { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result); // Resolve with the database object
+    };
+
+    request.onerror = (event) => {
+      reject('Database error: ' + event.target.errorCode);
+    };
+  });
+}
+
+// Function to save the tabMap object to IndexedDB
+function saveTabMapToIndexedDB(db, tabMap) {
+  const transaction = db.transaction('tabMapStore', 'readwrite');
+  const store = transaction.objectStore('tabMapStore');
+
+  const m = {}
+
+  for (const [key, value] of Object.entries(tabMap)) {
+    let v = {...value, svgRef: null};
+    m[key] = v;
+  }
+
+  // Store the entire object directly, using a fixed key (e.g., 'tabMap')
+  const tabMapData = { id: 'tabMap', value: m }; // 'tabMap' is used as the key
+
+  const request = store.put(tabMapData); // Use put to insert or update
+  request.onsuccess = () => {
+    console.log('tabMap saved successfully');
+  };
+
+  request.onerror = (event) => {
+    console.error('Error saving tabMap:', event.target.error);
+  };
+}
+
+// Function to read the tabMap object from IndexedDB
+function readTabMapFromIndexedDB(db) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction('tabMapStore', 'readonly');
+    const store = transaction.objectStore('tabMapStore');
+
+    const getRequest = store.get('tabMap'); // Retrieve the object by its key (id = 'tabMap')
+
+    getRequest.onsuccess = function() {
+      const result = getRequest.result;
+      if (result) {
+        resolve(result.value); // Return the 'value' field from the object
+      } else {
+        resolve(null); // No data found
+      }
+    };
+
+    getRequest.onerror = function(event) {
+      reject('Error reading data: ' + event.target.error);
+    };
+  });
+}
+
+
+
+ async function loadTabMapFromIndexedDB() {
+  try {
+    const db = await openDatabase();
+    const tabMap = await readTabMapFromIndexedDB(db);
+    return tabMap;
+  } catch (error) {
+    console.error('Error loading tabMap from IndexedDB:', error);
+    return null;
+  }
+}
 
 function App() {
-
+  const intervalId = setInterval(async () => {
+    try {
+      const db = await openDatabase(); // Open the database
+      console.log('Database opened.');
+      saveTabMapToIndexedDB(db, TabMap); // Save the tabMap data to IndexedDB
+    } catch (error) {
+      console.error('Error saving tabMap to IndexedDB:', error);
+    }
+  }, 60000);
 
 
   const [tabs, setTabs] = React.useState([{ id: 'Mind Map', label: 'Mind Map' }]);
@@ -29,8 +119,10 @@ function App() {
     svgRef: null
   }
   if (TabMap['Mind Map'] == undefined) {
-    TabMap['Mind Map'] = {...defaultTab}
+    // check if tabmap is there in indexdb if not create else load 
+      TabMap['Mind Map'] = {...defaultTab}
   }
+
   React.useEffect(()=>{
     setNodes(TabMap[activeTab].nodes)
     setEdges(TabMap[activeTab].edges)
@@ -180,6 +272,54 @@ function App() {
         alert('Failed to save mind map');
       }
   };
+
+  const RestoreTabs = async () => {
+    
+  
+    loadTabMapFromIndexedDB().then((tabMap) => {
+      if (tabMap) {
+        TabMap = tabMap
+  
+        setNodes(TabMap[activeTab].nodes)
+        setEdges(TabMap[activeTab].edges)
+        setHoveredNode(TabMap[activeTab].hoveredNode)
+        setSelectedNode(TabMap[activeTab].selectedNode)
+        setActiveNoteId(TabMap[activeTab].activeNoteId)
+        setActiveNoteSummaryId(TabMap[activeTab].activeNoteSummaryId)
+        setNoteText(TabMap[activeTab].noteText)
+        setIsDragging(TabMap[activeTab].isDragging)
+        setDragOffset(TabMap[activeTab].dragOffset)
+        svgRef = TabMap[activeTab].svgRef
+        setExpandedNodes(new Set(TabMap[activeTab].expandedNodes));
+
+        //iterate over tabmap
+        for (const [k, value] of Object.entries(TabMap)) {
+          if (k !== 'Mind Map') {
+              if (TabMap[k] ==undefined){
+                TabMap[k] = {}
+              }
+              TabMap[k].nodes = value.nodes
+              TabMap[k].edges = value.edges
+              TabMap[k].expandedNodes = value.expandedNodes
+              TabMap[k].hoveredNode = value.hoveredNode
+              TabMap[k].selectedNode = value.selectedNode
+              TabMap[k].activeNoteId = value.activeNoteId
+              TabMap[k].activeNoteSummaryId = value.activeNoteSummaryId
+              TabMap[k].noteText = value.noteText
+              TabMap[k].isDragging = value.isDragging
+              TabMap[k].dragOffset = value.dragOffset
+              TabMap[k].svgRef = value.svgRef
+              const newTab = { id: k, label: k }
+              setTabs([...tabs, newTab])
+              setTabCount(tabCount + 1)
+            }
+            alert('Restore Maps successfully!');
+        }
+
+        
+      }
+     }) 
+  }
 
   const handleLoad = async () => {
     const data = await loadFromFile();
@@ -629,6 +769,15 @@ function App() {
                 onClick={() => handleLoadAll(selectedNode)}
               >
                 Loads Tabs
+              </button>
+            </div>
+
+        <div className="mt-4">
+              <button
+                className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                onClick={() => RestoreTabs()}
+              >
+                Restore Tabs
               </button>
             </div>
         </div>
